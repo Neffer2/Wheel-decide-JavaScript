@@ -1,10 +1,10 @@
 /* Middle Screen */
 let x = 640;
 let y = 305;
-let ruleta;
+let ruleta; 
 let puntero;
 
-let elems = [];
+let bars = [];
 // Grados de cada división de la ruleta
 let divisiones = 14;
 let premios = ['TRaje solo', 'tres trajes', 'impresora', 'camion-frente', 'repetir', 'chat', 'tres baolado', 'repetir', 'camion lado', 'camiseta', 'Mascaras', 'Gorra', 'barco?', 'engrane cabeza'];
@@ -12,13 +12,15 @@ let rotate = false;
 
 let text;
 
-/* Velocidad */
-    let velocidad = 1;
-    let valocity_handler = true;
-    let limite;
-/* --- */
+    /* Velocidad */
+        let velocidad = 1;
+        let valocity_handler = true;
+        let limite;
+    /* --- */
 
-    let vueltas = 0;
+    /* Formmualrios */
+        let formElem;
+    /*  */
 
 class MainScene extends Phaser.Scene {
     constructor(){
@@ -29,30 +31,37 @@ class MainScene extends Phaser.Scene {
         this.load.image('Base', './assets/Base_1.png');
         this.load.image('ruleta', './assets/ruleta1-circulo.png');
         this.load.image('fondo-2', './assets/fondo-2.jpg');
-        this.load.image('fondo-2', './assets/fondo-2.jpg');
+        this.load.image('fondo-3', './assets/Fondo-3.jpg');
         this.load.image('header', './assets/header.png');
         this.load.image('header', './assets/header.png');
         this.load.image('puntero', './assets/puntero-ruleta1.png');
+        this.load.html('formulario', './form.html');
 
-        let rect2 = this.make.graphics().fillStyle(0xFFFFFF).fillRect(0, 0, 130, 25);
+        let rect2 = this.make.graphics().fillStyle(0xFFFFFF).fillRect(50, 50, 130, 25);
         rect2.generateTexture('rectangle', 70, 25);
     }
- 
+  
     create(){
         this.add.image((this.sys.game.canvas.width/2), (this.sys.game.canvas.height/2), 'fondo-2').setScale(.7);
         this.add.image(900, 450, 'Base').setScale(.7);
         this.add.image(480, 250, 'header').setScale(.5);
         ruleta = this.add.sprite(900, 250, 'ruleta').setScale(.7);
-        this.add.image(480, 250, 'ruleta').setScale(.7).setAngle(270)
+        puntero = this.physics.add.sprite(900, 80, 'puntero').setScale(.45);
+        puntero.setSize(true, 100, 120);
         
-        ruleta.setAngle(0);
+        bars = this.setBars(divisiones, this);
 
         text = this.add.text(10, 50, '', { font: '16px Courier', fill: '#ffffff' });
 
         const circle = new Phaser.Geom.Circle(900, 250, 160);
         this.group = this.add.group({ key: 'rectangle', frameQuantity: 14 });
+        Phaser.Actions.PlaceOnCircle(bars, circle);
 
-        Phaser.Actions.PlaceOnCircle(elems, circle);
+
+        /* Form */
+        this.add.image((this.sys.game.canvas.width/2), (this.sys.game.canvas.height/2), 'fondo-3').setScale(.7);
+            formElem = this.add.dom((this.sys.game.canvas.width/2), (this.sys.game.canvas.height/6)).createFromCache('formulario');
+        /* --- */
     }
 
     /* Calcula los rangos de la ruleta 
@@ -60,47 +69,71 @@ class MainScene extends Phaser.Scene {
         -157.5 + 360 = 202.5 
         360/divisiones = grados de cada division
         grado
+
+        IDEA DESECHADA
     */
-    getRangos(divisiones){
-        let rangos = [];
-        let grados = 360/divisiones;
-        let cont;
-        let acumGrados = 0;
+    // getRangos(divisiones){
+    //     let rangos = [];
+    //     let grados = 360/divisiones;
+    //     let cont;
+    //     let acumGrados = 0;
         
-        cont = 0;
+    //     cont = 0;
+    //     while(cont < divisiones){
+    //         rangos.push({
+    //             min: acumGrados,
+    //             max: (acumGrados += grados),
+    //             premio: premios[cont]
+    //         });
+    //         cont++;
+    //     }
+    //     return rangos;
+    // }
+
+    /*  
+        Crea un arreglo con elementos 
+        - Inserta el nombre del premio
+        - Los elementos se ordenan en el circulo de arriba hacia abajo, 
+           De derecha a izquierda
+    */
+    setBars(divisiones, context){
+        let cont = 0;
+        let bars = [];
+        let elem;
+
         while(cont < divisiones){
-            rangos.push({
-                min: acumGrados,
-                max: (acumGrados += grados),
-                premio: premios[cont]
-            });
+            elem = context.physics.add.sprite(0, 0, 'rectangle');
+            elem.premio = premios[cont];
+            elem.visible = false;
+            bars.push(elem);
             cont++;
         }
-        return rangos;
+        console.log(bars);
+        return bars;
     }
 
-    getPremio(angle, rangos){
-        if (angle < 0){
-            angle = angle + 360;
-        }
 
-        // puntero.setAngle(angle);
-
-        // 270
-        console.log(angle);
-        console.log(rangos);
-        rangos.forEach((elem) => {
-            if (angle >= elem.min && angle < elem.max){
-                console.log(elem.premio);
-            }
+    getPremio(){
+        // Hace rotar las barras al ángulo del a ruleta (RotateAroundDistance funciona con radianes)
+        Phaser.Actions.RotateAroundDistance(bars, { x: 900, y: 250 }, ruleta.rotation, 160);
+        /* 
+            El comportamiento normal del evento es ser ejecutado todo el tiempo mientrras este se cumpla.
+            Con esto logro ejecutarlo solo una vez.
+        */
+        bars.forEach((elem) => {
+            this.physics.add.collider(elem, puntero, function(bar = elem){
+                alert(bar.premio);
+                bar.disableBody(true, true);
+            });
         });
+
     }
 
     rotar(){
         velocidad = 1;
         rotate = !rotate;
-        limite = this.getRndInteger(15, 25);
-        // console.log("Límite: "+limite);
+        // Veolicdad aleatoria
+        limite = this.getRndInteger(15, 30);
     }
 
     getRndInteger(min, max) {
@@ -109,11 +142,10 @@ class MainScene extends Phaser.Scene {
     
     update(){
         if (rotate){
-            // console.log(velocidad);
             /*
-            Aumenta la velocidada cada PASO.
-            Hasta el límmite. 
-            Luego resta la velocidad hasta cero.
+                Aumenta la velocidada cada PASO.
+                Hasta el límmite. 
+                Luego resta la velocidad hasta cero.
              */
             if (valocity_handler && velocidad > limite){
                 valocity_handler = !valocity_handler;
@@ -127,14 +159,12 @@ class MainScene extends Phaser.Scene {
                 velocidad -= .1;
             }
             ruleta.angle += velocidad;
-            console.log("X: "+ruleta.x);
-            console.log("Y: "+ruleta.y);
-            Phaser.Actions.RotateAroundDistance(elems, { x: 900, y: 250 }, ruleta.angle, 160);
-            
+
             if (velocidad < 0){
                 rotate = !rotate;
                 valocity_handler = !valocity_handler;
-                this.getPremio(ruleta.angle, this.getRangos(divisiones));
+                puntero.setAngle(0);
+                this.getPremio();
             }
 
             text.setText([
@@ -154,6 +184,9 @@ const config = {
     parent: 'game-container',
     width: 1280,
     height: 610,
+    dom: {
+        createContainer: true
+    },
     scene: [MainScene],
     scale: {
         mode: Phaser.Scale.FIT
@@ -161,7 +194,7 @@ const config = {
     physics: {
         default: 'arcade',
         arcade: {
-            debug: true,
+            debug: false,
             // gravity: { y: 350 }
         }
     }
