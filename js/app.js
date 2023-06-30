@@ -3,6 +3,8 @@ let x = 640;
 let y = 305;
 let ruleta; 
 let puntero;
+let botonRotar;
+let mContext;
 
 let bars = [];
 // Grados de cada división de la ruleta
@@ -34,6 +36,7 @@ class MainScene extends Phaser.Scene {
         this.load.image('fondo-3', './assets/Fondo-3.jpg');
         this.load.image('header', './assets/header.png');
         this.load.image('header', './assets/header.png');
+        this.load.image('btn_girar', './assets/btn.png');        
         this.load.image('puntero', './assets/puntero-ruleta1.png');
         this.load.html('formulario', './form.html');
 
@@ -42,6 +45,7 @@ class MainScene extends Phaser.Scene {
     }
   
     create(){
+        mContext = this;
         this.add.image((this.sys.game.canvas.width/2), (this.sys.game.canvas.height/2), 'fondo-2').setScale(.7);
         this.add.image(900, 450, 'Base').setScale(.7);
         this.add.image(480, 250, 'header').setScale(.5);
@@ -49,6 +53,7 @@ class MainScene extends Phaser.Scene {
         puntero = this.physics.add.sprite(900, 80, 'puntero').setScale(.45);
         puntero.setSize(true, 100, 120);
         
+        botonRotar = this.add.sprite(500, 500, 'btn_girar').setInteractive().setScale(.3);
         bars = this.setBars(divisiones, this);
 
         text = this.add.text(10, 50, '', { font: '16px Courier', fill: '#ffffff' });
@@ -57,10 +62,23 @@ class MainScene extends Phaser.Scene {
         this.group = this.add.group({ key: 'rectangle', frameQuantity: 14 });
         Phaser.Actions.PlaceOnCircle(bars, circle);
 
+        // this.rotar();
+
+        botonRotar.on('pointerdown', function (pointer){   
+            mContext.rotar(); 
+        });
+
+        botonRotar.on('pointerover', function (pointer){   
+            botonRotar.setScale(.35)         
+        });
+
+        botonRotar.on('pointerout', function (pointer){   
+            botonRotar.setScale(.3)         
+        });
 
         /* Form */
-        this.add.image((this.sys.game.canvas.width/2), (this.sys.game.canvas.height/2), 'fondo-3').setScale(.7);
-            formElem = this.add.dom((this.sys.game.canvas.width/2), (this.sys.game.canvas.height/6)).createFromCache('formulario');
+        // this.add.image((this.sys.game.canvas.width/2), (this.sys.game.canvas.height/2), 'fondo-3').setScale(.7);
+        //     formElem = this.add.dom((this.sys.game.canvas.width/2), (this.sys.game.canvas.height/6)).createFromCache('formulario');
         /* --- */
     }
 
